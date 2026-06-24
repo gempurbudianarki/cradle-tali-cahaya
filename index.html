@@ -475,7 +475,7 @@
 
   <button id="dashboard-toggle" class="dashboard-toggle" onclick="toggleDashboard(false)">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
-    SHOW PANEL
+    TAMPILKAN PANEL
   </button>
 
   <div id="dashboard" class="dashboard">
@@ -487,95 +487,95 @@
 
     <div class="status-container">
       <div class="status-item">
-        <span>CAM FEED:</span>
+        <span>KAMERA:</span>
         <div>
           <span id="status-cam-dot" class="status-indicator"></span>
-          <span id="status-cam-text">INITIALIZING</span>
+          <span id="status-cam-text">MEMULAI</span>
         </div>
       </div>
       <div class="status-item">
-        <span>HAND DETECTOR:</span>
+        <span>DETEKTOR TANGAN:</span>
         <div>
           <span id="status-model-dot" class="status-indicator"></span>
-          <span id="status-model-text">LOADING ASSETS</span>
+          <span id="status-model-text">MEMUAT ASET</span>
         </div>
       </div>
       <div class="status-item">
-        <span>SYSTEM RATE:</span>
+        <span>KECEPATAN FRAME:</span>
         <div class="fps-badge">
           <span id="status-fps">00</span> FPS
         </div>
       </div>
       <div class="status-item">
-        <span>HANDS DETECTED:</span>
+        <span>TANGAN TERDETEKSI:</span>
         <span id="status-hands-count" style="color: var(--magenta);">0</span>
       </div>
     </div>
 
     <div>
-      <div class="section-title">Renderer Config</div>
+      <div class="section-title">Konfigurasi Tampilan</div>
       <div class="control-group">
         <div class="control-item">
-          <label class="control-label" for="feed-mode">Background Mode</label>
+          <label class="control-label" for="feed-mode">Mode Latar Belakang</label>
           <select id="feed-mode">
-            <option value="camera" selected>Raw Video (Mirrored)</option>
-            <option value="silhouette">Hologram Silhouette (Deep Blue)</option>
-            <option value="hybrid">Digital Overlay (Blended)</option>
-            <option value="dark">Void Mode (Pure Black)</option>
+            <option value="camera" selected>Video Asli (Cermin)</option>
+            <option value="silhouette">Siluet Hologram (Biru Gelap)</option>
+            <option value="hybrid">Overlay Digital (Campuran)</option>
+            <option value="dark">Mode Gelap (Hitam Pekat)</option>
           </select>
         </div>
 
         <div class="control-item">
-          <label class="control-label" for="cradle-pattern">Cradle Connect Pattern</label>
+          <label class="control-label" for="cradle-pattern">Pola Koneksi Tali</label>
           <select id="cradle-pattern">
-            <option value="parallel">Parallel Fingers (Normal)</option>
-            <option value="cradle">Cat's Cradle (Crossed)</option>
-            <option value="web">Full Laser Web (All fingertips)</option>
-            <option value="spider" selected>Spider Web (Full Joint Mesh)</option>
-            <option value="constellation">Star Constellation (Joint Mesh)</option>
+            <option value="parallel">Jari Sejajar (Normal)</option>
+            <option value="cradle">Cat's Cradle (Bersilang)</option>
+            <option value="web">Jaring Penuh (Semua Ujung Jari)</option>
+            <option value="spider" selected>Jaring Laba-laba (Semua Sendi)</option>
+            <option value="constellation">Konstelasi Bintang (Sendi Utama)</option>
           </select>
         </div>
 
         <div class="control-item">
-          <label class="control-label" for="color-theme">Neon Palette</label>
+          <label class="control-label" for="color-theme">Palet Warna Neon</label>
           <select id="color-theme">
             <option value="cyberpunk" selected>Cyberpunk (Cyan-Magenta)</option>
-            <option value="synthwave">Synthwave (Pink-Orange)</option>
-            <option value="matrix">Matrix Grid (Neon Greens)</option>
-            <option value="solar">Solar Wind (Red-Gold)</option>
+            <option value="synthwave">Synthwave (Pink-Oranye)</option>
+            <option value="matrix">Matrix Grid (Hijau Neon)</option>
+            <option value="solar">Angin Matahari (Merah-Emas)</option>
           </select>
         </div>
       </div>
     </div>
 
     <div>
-      <div class="section-title">String Mechanics</div>
+      <div class="section-title">Mekanika Tali</div>
       <div class="control-group">
         <div class="control-item">
-          <label class="control-label" for="tension-mode">Tension Mode</label>
+          <label class="control-label" for="tension-mode">Mode Ketegangan</label>
           <select id="tension-mode">
-            <option value="lentur" selected>Lentur (Flexible Physics)</option>
-            <option value="tegang">Tegang (Rigid Laser)</option>
+            <option value="lentur" selected>Lentur (Fisika Fleksibel)</option>
+            <option value="tegang">Tegang (Laser Kaku)</option>
           </select>
         </div>
 
         <div class="control-item">
           <label class="control-label" for="string-elasticity">
-            Elastic Tension <span class="val" id="val-elasticity">2.0</span>
+            Elastisitas Tali <span class="val" id="val-elasticity">2.0</span>
           </label>
           <input type="range" id="string-elasticity" min="0.5" max="5.0" step="0.1" value="2.0">
         </div>
 
         <div class="control-item">
           <label class="control-label" for="string-damping">
-            Vibration Dampening <span class="val" id="val-damping">0.96</span>
+            Redaman Getaran <span class="val" id="val-damping">0.96</span>
           </label>
           <input type="range" id="string-damping" min="0.80" max="0.99" step="0.01" value="0.96">
         </div>
 
         <div class="control-item">
           <label class="control-label" for="smoothing-factor">
-            Tracking Snappiness <span class="val" id="val-smoothing">0.75</span>
+            Kelancaran Pelacakan <span class="val" id="val-smoothing">0.75</span>
           </label>
           <input type="range" id="smoothing-factor" min="0.05" max="1.0" step="0.05" value="0.75">
         </div>
@@ -583,10 +583,10 @@
     </div>
 
     <div>
-      <div class="section-title">Visual Overlays</div>
+      <div class="section-title">Efek Visual</div>
       <div class="control-group">
         <div class="switch-item">
-          <span>CRT Scanline Overlay</span>
+          <span>Efek Garis Scan CRT</span>
           <label class="switch">
             <input type="checkbox" id="toggle-crt" checked>
             <span class="slider"></span>
@@ -594,7 +594,7 @@
         </div>
 
         <div class="switch-item">
-          <span>Electric Arcs (Near Touch)</span>
+          <span>Busur Listrik (Sentuhan Dekat)</span>
           <label class="switch">
             <input type="checkbox" id="toggle-lightning" checked>
             <span class="slider"></span>
@@ -602,7 +602,7 @@
         </div>
 
         <div class="switch-item">
-          <span>Retro Warp Grid Background</span>
+          <span>Grid Warp Retro</span>
           <label class="switch">
             <input type="checkbox" id="toggle-grid" checked>
             <span class="slider"></span>
@@ -610,7 +610,7 @@
         </div>
 
         <div class="switch-item">
-          <span>Synthesized SFX Mode</span>
+          <span>Efek Suara Sintetis</span>
           <label class="switch">
             <input type="checkbox" id="toggle-audio">
             <span class="slider"></span>
@@ -618,39 +618,39 @@
         </div>
 
         <div class="control-item">
-          <label class="control-label" for="glow-rendering">Glow Mode</label>
+          <label class="control-label" for="glow-rendering">Mode Cahaya</label>
           <select id="glow-rendering">
-            <option value="bloom" selected>Performance Bloom (Multi-Line)</option>
-            <option value="blur">High Quality (Canvas shadowBlur)</option>
-            <option value="none">No Glow (Low Spec)</option>
+            <option value="bloom" selected>Bloom Performa (Multi-Garis)</option>
+            <option value="blur">Kualitas Tinggi (Canvas shadowBlur)</option>
+            <option value="none">Tanpa Cahaya (Spesifikasi Rendah)</option>
           </select>
         </div>
       </div>
     </div>
 
     <div>
-      <div class="section-title">Simulate & Debug</div>
+      <div class="section-title">Simulasi & Debug</div>
       <div class="control-group" style="flex-direction: row; gap: 8px;">
-        <button id="btn-demo" class="btn btn-primary" style="flex: 1;" onclick="toggleDemoMode()">ENABLE DEMO MODE</button>
-        <button class="btn" style="flex: 1;" onclick="triggerSparkExplosion()">BURST FX</button>
+        <button id="btn-demo" class="btn btn-primary" style="flex: 1;" onclick="toggleDemoMode()">AKTIFKAN DEMO</button>
+        <button class="btn" style="flex: 1;" onclick="triggerSparkExplosion()">LEDAKAN PARTIKEL</button>
       </div>
     </div>
   </div>
 
   <div id="help-overlay" class="help-overlay">
-    <button class="collapse-btn" onclick="toggleHelp(true)" style="font-size: 1.1rem; position: absolute; top: 12px; right: 14px;" title="Hide Instructions">×</button>
-    <h3 style="margin-top: 2px;">OPERATIONAL DIRECTIVE</h3>
+    <button class="collapse-btn" onclick="toggleHelp(true)" style="font-size: 1.1rem; position: absolute; top: 12px; right: 14px;" title="Sembunyikan Petunjuk">&times;</button>
+    <h3 style="margin-top: 2px;">PANDUAN PENGGUNAAN</h3>
     <ul style="margin-top: 10px;">
-      <li><strong>Webcam Permission</strong>: Grant camera access. Stand 1-2 meters away.</li>
-      <li><strong>Interaction</strong>: Bring <strong>both hands</strong> into view. Move them together and apart to stretch the laser strings.</li>
-      <li><strong>Sparks & Lightning</strong>: Touch corresponding fingertips to trigger a particle explosion!</li>
-      <li><strong>Pluck strings</strong>: Snap fingers or wave them rapidly to cause string vibration.</li>
-      <li><strong>Zen Mode</strong>: Press <strong>"H"</strong> or click the <strong>"×"</strong> on settings to hide all floating panels completely!</li>
+      <li><strong>Izin Kamera</strong>: Berikan akses kamera. Berdiri 1-2 meter dari layar.</li>
+      <li><strong>Interaksi</strong>: Tampilkan <strong>kedua tangan</strong> ke kamera. Gerakkan mendekat dan menjauh untuk meregangkan tali laser.</li>
+      <li><strong>Percikan & Petir</strong>: Sentuhkan ujung jari yang bersesuaian untuk memicu ledakan partikel!</li>
+      <li><strong>Petik Tali</strong>: Jentikkan jari atau gerakkan dengan cepat untuk membuat tali bergetar.</li>
+      <li><strong>Mode Zen</strong>: Tekan <strong>"H"</strong> atau klik <strong>"&times;"</strong> di pengaturan untuk menyembunyikan semua panel.</li>
     </ul>
   </div>
 
   <div class="ui-helper">
-    Press "H" to toggle this Settings Panel.
+    Tekan "H" untuk tampilkan/sembunyikan Panel Pengaturan.
   </div>
 
   <script>
@@ -1182,6 +1182,11 @@
       }
 
       calculateFingertipVelocities(currentLeft, currentRight);
+
+      // Clear all particles immediately when no hands are detected
+      if (!currentLeft && !currentRight) {
+        particles = [];
+      }
 
       gridDeformationPoints = [];
 
