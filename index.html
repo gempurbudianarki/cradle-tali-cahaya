@@ -1722,69 +1722,51 @@
 
         push();
 
-        // ===== TEGANG MODE: Thin precision laser beam — direct from p1 to p2 =====
+        // ===== TEGANG MODE: Thread-like laser beam (benang) — direct from p1 to p2 =====
         if (isTegang) {
           blendMode(ADD);
           noFill();
 
-          // Use Z depth for 3D brightness/thickness scaling
+          // Z depth for 3D brightness scaling
           let avgZ = ((p1.z || 0) + (p2.z || 0)) / 2;
-          let depthScale = map(avgZ, -0.15, 0.15, 1.3, 0.5, true);
+          let depthScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
 
-          // Layer 1: wide outer soft atmospheric glow (very subtle)
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 12 * depthScale);
-          strokeWeight(14 * depthScale);
+          // Layer 1: wide outer soft atmospheric halo
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 15 * depthScale);
+          strokeWeight(18 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 2: inner glow ring
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 45 * depthScale);
-          strokeWeight(4 * depthScale);
+          // Layer 2: medium glow — visible benang glow
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 60 * depthScale);
+          strokeWeight(8 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 3: bright core — thin laser line
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 220);
-          strokeWeight(1.5 * depthScale);
+          // Layer 3: bright colored core — benang thickness
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 230);
+          strokeWeight(2.5 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 4: white-hot 1px center with shadow bloom
-          drawingContext.shadowBlur = 12;
-          drawingContext.shadowColor = `rgba(${red(stringColor)},${green(stringColor)},${blue(stringColor)},0.9)`;
+          // Layer 4: white-hot center with bloom shadow
+          drawingContext.shadowBlur = 14;
+          drawingContext.shadowColor = `rgba(${red(stringColor)},${green(stringColor)},${blue(stringColor)},1)`;
           stroke(255, 255, 255, 255);
-          strokeWeight(0.8);
+          strokeWeight(1.2 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
           drawingContext.shadowBlur = 0;
 
-          // === Moving micro dot particles (no balloons) ===
+          // Small moving particle (no balloons) — max 7px
           let scanT = (frameCount * 0.022 + this.colorIdx * 0.37) % 1.0;
           let sx = lerp(p1.x, p2.x, scanT);
           let sy = lerp(p1.y, p2.y, scanT);
-
           noStroke();
-          // Micro dot — tiny white core, 2px
-          fill(255, 255, 255, 240);
-          ellipse(sx, sy, 2.5 * depthScale, 2.5 * depthScale);
-          // Tiny glow halo — 5px max
-          fill(red(stringColor), green(stringColor), blue(stringColor), 140);
-          ellipse(sx, sy, 5 * depthScale, 5 * depthScale);
+          fill(255, 255, 255, 255);
+          ellipse(sx, sy, 3 * depthScale, 3 * depthScale);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 160);
+          ellipse(sx, sy, 7 * depthScale, 7 * depthScale);
 
-          // Second micro particle offset by half
-          let scanT2 = (scanT + 0.5) % 1.0;
-          let sx2 = lerp(p1.x, p2.x, scanT2);
-          let sy2 = lerp(p1.y, p2.y, scanT2);
-          fill(255, 255, 255, 180);
-          ellipse(sx2, sy2, 2 * depthScale, 2 * depthScale);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 100);
-          ellipse(sx2, sy2, 4 * depthScale, 4 * depthScale);
-
-          // Endpoint anchor dot — tiny (3px) bright dot, no large glow
-          fill(255, 255, 255, 200);
-          ellipse(p1.x, p1.y, 3, 3);
-          fill(255, 255, 255, 200);
-          ellipse(p2.x, p2.y, 3, 3);
-
-          // Very rare spark (tiny) — only 1% chance
-          if (random() < 0.01) {
-            particles.push(new Spark(sx, sy, null, 0.4));
+          // Very rare tiny spark only
+          if (random() < 0.008) {
+            particles.push(new Spark(sx, sy, null, 0.35));
           }
 
           pop();
@@ -1958,25 +1940,26 @@
           }
         }
       } else if (config.cradlePattern === 'spider') {
-        // Spider Web: connect ALL 21 joints of left hand to ALL 21 joints of right hand
-        // For performance, use a curated dense set: all finger bones (not palm)
-        const ALL_JOINTS = [0,1,2,3,4, 5,6,7,8, 9,10,11,12, 13,14,15,16, 17,18,19,20];
+        // Spider Web: fingertip-to-fingertip web (5x5=25) + per-finger knuckle pairs (3x5=15)
+        // Total: ~40 clearly visible strings like a spider web
         let col = 0;
-        for (let lj of ALL_JOINTS) {
-          for (let rj of ALL_JOINTS) {
-            // Only connect matching-ish joints to avoid O(n^2) explosion while keeping density
-            // Connect: same finger index, adjacent fingers, and all fingertips to all joints
-            let lFinger = Math.floor(lj / 4);
-            let rFinger = Math.floor(rj / 4);
-            let isDirect = (lj === rj);                         // Same landmark
-            let isAdjacentFinger = Math.abs(lFinger - rFinger) <= 1; // Adjacent fingers
-            let isLTip = [4,8,12,16,20].includes(lj);           // Left is a fingertip
-            let isRTip = [4,8,12,16,20].includes(rj);           // Right is a fingertip
-            if (isDirect || isAdjacentFinger || isLTip || isRTip) {
-              strings.push(new PhysicalString(lj, rj, col % 3));
-              col++;
-            }
+
+        // Layer 1: All left fingertips → all right fingertips (main web)
+        for (let lTip of FINGERTIPS) {
+          for (let rTip of FINGERTIPS) {
+            strings.push(new PhysicalString(lTip, rTip, col % 3));
+            col++;
           }
+        }
+
+        // Layer 2: Same-finger knuckle pairs for depth (base, mid, tip of each finger)
+        const FINGER_BASES = [1,5,9,13,17];   // MCP joints (knuckle base)
+        const FINGER_MIDS  = [2,6,10,14,18];  // PIP joints (middle knuckle)
+        const FINGER_DIPS  = [3,7,11,15,19];  // DIP joints (upper knuckle)
+        for (let i = 0; i < 5; i++) {
+          strings.push(new PhysicalString(FINGER_BASES[i], FINGER_BASES[i], col % 3)); col++;
+          strings.push(new PhysicalString(FINGER_MIDS[i],  FINGER_MIDS[i],  (col+1) % 3)); col++;
+          strings.push(new PhysicalString(FINGER_DIPS[i],  FINGER_DIPS[i],  (col+2) % 3)); col++;
         }
       } else if (config.cradlePattern === 'constellation') {
         
