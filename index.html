@@ -1736,158 +1736,104 @@
           let avgZ = ((p1.z || 0) + (p2.z || 0)) / 2;
           let depthScale = map(avgZ, -0.15, 0.15, 1.3, 0.55, true);
 
-          // Layer 1: subtle outer glow only
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 30 * depthScale);
-          strokeWeight(6 * depthScale);
+          // Layer 1: subtle outer glow (sangat tipis)
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 22 * depthScale);
+          strokeWeight(3 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 2: white-bright core thread (benang)
-          stroke(255, 255, 255, 200 * depthScale);
-          strokeWeight(1.5 * depthScale);
+          // Layer 2: white core filament (benang ultra tipis)
+          stroke(255, 255, 255, 170 * depthScale);
+          strokeWeight(0.6 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
           pop();
           return;
         }
 
-        // ===== LENTUR MODE: Flexible node-based drawing =====
-        let thickness = map(d, 100, 1000, 5.5, 1.6, true);
+        // ===== LENTUR MODE: Fisika fleksibel dengan tali tipis neon =====
+        // Ukuran tali lebih kecil dan proporsional
+        let thickness = map(d, 100, 1000, 2.5, 0.8, true);
         
-        // Apply selected glow mode
+        // Glow mode
         if (config.glowMode === 'blur') {
-          drawingContext.shadowBlur = 22;
+          drawingContext.shadowBlur = 14;
           drawingContext.shadowColor = stringColor;
         }
 
-        // Draw outer thick neon glow layer segment by segment for 3D depth scaling
+        noFill();
         if (config.glowMode === 'bloom') {
-          noFill();
-          
-          // Layer 1: thick background glow
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 25);
+          // Layer 1: outer soft glow
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 20);
           for (let i = 0; i < this.numNodes - 1; i++) {
-            let n1 = this.nodes[i];
-            let n2 = this.nodes[i+1];
+            let n1 = this.nodes[i], n2 = this.nodes[i+1];
             let avgZ = (n1.z + n2.z) / 2;
-            let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-            strokeWeight(thickness * 5.8 * segmentScale);
+            let segmentScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
+            strokeWeight(thickness * 4 * segmentScale);
             line(n1.x, n1.y, n2.x, n2.y);
           }
-          
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 85);
+          // Layer 2: mid glow
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 70);
           for (let i = 0; i < this.numNodes - 1; i++) {
-            let n1 = this.nodes[i];
-            let n2 = this.nodes[i+1];
+            let n1 = this.nodes[i], n2 = this.nodes[i+1];
             let avgZ = (n1.z + n2.z) / 2;
-            let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-            strokeWeight(thickness * 3.0 * segmentScale);
+            let segmentScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
+            strokeWeight(thickness * 1.8 * segmentScale);
             line(n1.x, n1.y, n2.x, n2.y);
           }
         } else {
-          // Standard shadow mode
-          noFill();
           stroke(stringColor);
           for (let i = 0; i < this.numNodes - 1; i++) {
-            let n1 = this.nodes[i];
-            let n2 = this.nodes[i+1];
+            let n1 = this.nodes[i], n2 = this.nodes[i+1];
             let avgZ = (n1.z + n2.z) / 2;
-            let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-            strokeWeight(thickness * 1.8 * segmentScale);
+            let segmentScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
+            strokeWeight(thickness * 1.5 * segmentScale);
             line(n1.x, n1.y, n2.x, n2.y);
           }
         }
 
-        noFill();
-        let helixColor = color(
-          255 - red(stringColor),
-          255 - green(stringColor),
-          255 - blue(stringColor),
-          160
-        );
-        
+        // Helix twist A (tipis, offset kecil)
+        let helixColor = color(255 - red(stringColor), 255 - green(stringColor), 255 - blue(stringColor), 100);
         stroke(helixColor);
         for (let i = 0; i < this.numNodes - 1; i++) {
-          let n1 = this.nodes[i];
-          let n2 = this.nodes[i+1];
+          let n1 = this.nodes[i], n2 = this.nodes[i+1];
           let t1 = i / (this.numNodes - 1);
           let t2 = (i + 1) / (this.numNodes - 1);
-          
           let p1_angle = getPerpAngle(this.nodes, i);
           let p2_angle = getPerpAngle(this.nodes, i+1);
-          
-          let offsetA1 = 12 * sin(t1 * PI * 2.6 + frameCount * 0.08) * sin(t1 * PI);
-          let offsetA2 = 12 * sin(t2 * PI * 2.6 + frameCount * 0.08) * sin(t2 * PI);
-          
+          let offsetA1 = 5 * sin(t1 * PI * 2.6 + frameCount * 0.07) * sin(t1 * PI);
+          let offsetA2 = 5 * sin(t2 * PI * 2.6 + frameCount * 0.07) * sin(t2 * PI);
           let x1 = n1.x + cos(p1_angle) * offsetA1;
           let y1 = n1.y + sin(p1_angle) * offsetA1;
           let x2 = n2.x + cos(p2_angle) * offsetA2;
           let y2 = n2.y + sin(p2_angle) * offsetA2;
-          
           let avgZ = (n1.z + n2.z) / 2;
-          let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-          
-          strokeWeight(thickness * 0.45 * segmentScale);
+          let segmentScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
+          strokeWeight(thickness * 0.4 * segmentScale);
           line(x1, y1, x2, y2);
         }
 
-        // Twist B (Counter-Clockwise winding)
-        stroke(stringColor);
-        for (let i = 0; i < this.numNodes - 1; i++) {
-          let n1 = this.nodes[i];
-          let n2 = this.nodes[i+1];
-          let t1 = i / (this.numNodes - 1);
-          let t2 = (i + 1) / (this.numNodes - 1);
-          
-          let p1_angle = getPerpAngle(this.nodes, i);
-          let p2_angle = getPerpAngle(this.nodes, i+1);
-          
-          let offsetB1 = 12 * sin(t1 * PI * 2.6 - frameCount * 0.08 + PI) * sin(t1 * PI);
-          let offsetB2 = 12 * sin(t2 * PI * 2.6 - frameCount * 0.08 + PI) * sin(t2 * PI);
-          
-          let x1 = n1.x + cos(p1_angle) * offsetB1;
-          let y1 = n1.y + sin(p1_angle) * offsetB1;
-          let x2 = n2.x + cos(p2_angle) * offsetB2;
-          let y2 = n2.y + sin(p2_angle) * offsetB2;
-          
-          let avgZ = (n1.z + n2.z) / 2;
-          let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-          
-          strokeWeight(thickness * 0.45 * segmentScale);
-          line(x1, y1, x2, y2);
-        }
-
+        // White core thread
         drawingContext.shadowBlur = 0;
         noFill();
-        stroke(255, 255, 255, 240);
+        stroke(255, 255, 255, 180);
         for (let i = 0; i < this.numNodes - 1; i++) {
-          let n1 = this.nodes[i];
-          let n2 = this.nodes[i+1];
+          let n1 = this.nodes[i], n2 = this.nodes[i+1];
           let avgZ = (n1.z + n2.z) / 2;
-          let segmentScale = map(avgZ, -0.15, 0.15, 1.5, 0.6, true);
-          strokeWeight(max(0.8, thickness * 0.45 * segmentScale));
+          let segmentScale = map(avgZ, -0.15, 0.15, 1.4, 0.6, true);
+          strokeWeight(max(0.5, thickness * 0.35 * segmentScale));
           line(n1.x, n1.y, n2.x, n2.y);
         }
 
-        // Draw multiple moving energy pulses (data streams) running along strings
-        let pulseCount = 3;
-        for (let p = 0; p < pulseCount; p++) {
-          let tOffset = p / pulseCount;
-          let pulseT = (frameCount * 0.009 + this.colorIdx * 0.33 + tOffset) % 1.0;
-          let pulsePt = this.getPointAtT(pulseT);
-          if (pulsePt) {
-            let pulseScale = map(pulsePt.z || 0, -0.15, 0.15, 1.5, 0.6, true);
-            noStroke();
-            
-            fill(255, 255, 255, 255);
-            ellipse(pulsePt.x, pulsePt.y, thickness * 2.6 * pulseScale, thickness * 2.6 * pulseScale);
-            
-            fill(red(stringColor), green(stringColor), blue(stringColor), 140);
-            ellipse(pulsePt.x, pulsePt.y, thickness * 6.5 * pulseScale, thickness * 6.5 * pulseScale);
-
-            if (random() < 0.04) {
-              particles.push(new Spark(pulsePt.x, pulsePt.y));
-            }
-          }
+        // Tiny moving sparkle dot (bukan balon besar)
+        let pulseT = (frameCount * 0.01 + this.colorIdx * 0.4) % 1.0;
+        let pulsePt = this.getPointAtT(pulseT);
+        if (pulsePt) {
+          let pulseScale = map(pulsePt.z || 0, -0.15, 0.15, 1.3, 0.6, true);
+          noStroke();
+          fill(255, 255, 255, 220);
+          ellipse(pulsePt.x, pulsePt.y, 2.5 * pulseScale, 2.5 * pulseScale);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 120);
+          ellipse(pulsePt.x, pulsePt.y, 6 * pulseScale, 6 * pulseScale);
         }
 
         pop();
@@ -1917,22 +1863,23 @@
           }
         }
       } else if (config.cradlePattern === 'spider') {
-        // Spider Web: elegant 15-string cross-weave between fingertips
-        // 5 parallel (same finger) + 5 crossing (thumb-pinky, index-ring, etc) + 5 diagonal
+        // Spider Web: 35 tali — semua ujung jari ke ujung jari + sendi diagonal
         let col = 0;
-        // Direct same-finger pairs (5 strings)
+        // Layer 1: semua ujung jari kiri → semua ujung jari kanan (5x5 = 25 tali)
         for (let i = 0; i < FINGERTIPS.length; i++) {
-          strings.push(new PhysicalString(FINGERTIPS[i], FINGERTIPS[i], i % 3)); col++;
+          for (let j = 0; j < FINGERTIPS.length; j++) {
+            strings.push(new PhysicalString(FINGERTIPS[i], FINGERTIPS[j], col % 3)); col++;
+          }
         }
-        // X-cross pairs between opposite fingers (5 strings)
-        for (let i = 0; i < FINGERTIPS.length; i++) {
-          let j = FINGERTIPS.length - 1 - i;
-          strings.push(new PhysicalString(FINGERTIPS[i], FINGERTIPS[j], col % 3)); col++;
+        // Layer 2: sendi DIP (ujung atas) antar jari sejajar (5 tali)
+        const DIPS = [3, 7, 11, 15, 19];
+        for (let i = 0; i < DIPS.length; i++) {
+          strings.push(new PhysicalString(DIPS[i], DIPS[i], col % 3)); col++;
         }
-        // Adjacent-finger diagonal pairs (5 strings)
-        for (let i = 0; i < FINGERTIPS.length; i++) {
-          let j = (i + 2) % FINGERTIPS.length;
-          strings.push(new PhysicalString(FINGERTIPS[i], FINGERTIPS[j], col % 3)); col++;
+        // Layer 3: diagonal skip-satu antar sendi DIP (5 tali)
+        for (let i = 0; i < DIPS.length; i++) {
+          let j = (i + 2) % DIPS.length;
+          strings.push(new PhysicalString(DIPS[i], DIPS[j], col % 3)); col++;
         }
       } else if (config.cradlePattern === 'constellation') {
         
@@ -1995,9 +1942,9 @@
       let now = millis();
 
       if (d < 30) {
-        
-        if (!lastCollisionTime[key] || (now - lastCollisionTime[key] > 800)) {
-          createExplosion((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, 30);
+        if (!lastCollisionTime[key] || (now - lastCollisionTime[key] > 1000)) {
+          // Ledakan kecil — hanya 6 partikel
+          createExplosion((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, 6);
           lastCollisionTime[key] = now;
         }
       }
@@ -2108,27 +2055,28 @@
       endShape();
     }
 
-    // Particle System Implementation
+    // Partikel Spark — kecil, cepat hilang
     class Spark {
       constructor(x, y, customColor = null, sizeMultiplier = 1.0) {
         this.x = x;
         this.y = y;
         let angle = random(TWO_PI);
-        let speed = customColor ? random(1.5, 4.5) : random(3, 10);
+        let speed = random(1.5, 5);
         this.vx = cos(angle) * speed;
         this.vy = sin(angle) * speed;
-        this.alpha = 255;
-        this.size = (customColor ? random(1.5, 4) : random(3, 8)) * sizeMultiplier;
+        this.alpha = 220;
+        this.size = random(1, 3.5) * sizeMultiplier;
         this.color = customColor || random([themeColors.leftHand, themeColors.rightHand, themeColors.jointGlow]);
-        this.gravity = customColor ? 0.08 : 0.15;
+        this.gravity = 0.1;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
+        this.vx *= 0.92;
         this.vy += this.gravity;
-        this.alpha -= 6;
-        this.size *= 0.95;
+        this.alpha -= 14;  // Cepat hilang
+        this.size *= 0.93;
       }
 
       draw() {
@@ -2138,7 +2086,7 @@
       }
 
       isDead() {
-        return this.alpha <= 0 || this.size < 0.5;
+        return this.alpha <= 0 || this.size < 0.3;
       }
     }
 
@@ -2195,17 +2143,14 @@
     }
 
     function updateAndDrawParticles() {
+      // Hard cap: maks 60 partikel agar tidak numpuk
+      if (particles.length > 60) {
+        particles.splice(0, particles.length - 60);
+      }
       for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
         particles[i].draw();
         if (particles[i].isDead()) {
-          let p = particles[i];
-          if (p instanceof BubbleSpark) {
-            let sparkCount = floor(random(5, 9));
-            for (let s = 0; s < sparkCount; s++) {
-              particles.push(new Spark(p.x, p.y, p.color, 1.0));
-            }
-          }
           particles.splice(i, 1);
         }
       }
