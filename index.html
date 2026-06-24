@@ -551,6 +551,14 @@
       <div class="section-title">String Mechanics</div>
       <div class="control-group">
         <div class="control-item">
+          <label class="control-label" for="tension-mode">Tension Mode</label>
+          <select id="tension-mode">
+            <option value="lentur" selected>Lentur (Flexible Physics)</option>
+            <option value="tegang">Tegang (Rigid Laser)</option>
+          </select>
+        </div>
+
+        <div class="control-item">
           <label class="control-label" for="string-elasticity">
             Elastic Tension <span class="val" id="val-elasticity">2.0</span>
           </label>
@@ -655,6 +663,7 @@
       feedMode: 'camera', 
       cradlePattern: 'parallel', 
       themeName: 'cyberpunk',
+      tensionMode: 'lentur',
       elasticity: 2.0,
       damping: 0.96, 
       smoothing: 0.75, 
@@ -811,6 +820,7 @@
       bind('string-elasticity', 'elasticity', 'input', true);
       bind('string-damping', 'damping', 'input', true);
       bind('smoothing-factor', 'smoothing', 'input', true);
+      bind('tension-mode', 'tensionMode', 'change', false);
       
       bind('toggle-crt', 'crt', 'change', false, (val) => {
         const lines = document.getElementById('crt-scanlines');
@@ -1586,21 +1596,23 @@
 
         if (this.audioCooldown > 0) this.audioCooldown--;
 
-        // Apply decay to vibration pluck forces
         if (this.vibrateForce > 0.05) {
           this.vibrateForce *= config.damping;
         } else {
           this.vibrateForce = 0;
         }
 
-        // 1. Update free nodes in 3D with gravity and pluck wobble
-        let gravityVal = 0.08; // highly flexible (lentur)
+        let isTegang = config.tensionMode === 'tegang';
+        let gravityVal = isTegang ? 0.0 : 0.08;
+
         for (let i = 1; i < this.numNodes - 1; i++) {
           this.nodes[i].update(damping, gravityVal);
           
           if (this.vibrateForce > 0) {
             let offsetIdx = sin(i / (this.numNodes - 1) * PI);
-            let waveVal = sin(frameCount * 0.45 + i) * this.vibrateForce * offsetIdx * 0.5;
+            let speedMult = isTegang ? 0.95 : 0.45;
+            let ampMult = isTegang ? 0.15 : 0.5;
+            let waveVal = sin(frameCount * speedMult + i) * this.vibrateForce * offsetIdx * ampMult;
             this.nodes[i].y += waveVal;
           }
         }
@@ -1615,13 +1627,14 @@
         let totalD = dist(p1.x, p1.y, p2.x, p2.y);
         let targetSegmentLength = totalD / (this.numNodes - 1);
 
-        // Allow string sagging when fingers are close (slack)
-        let slackThreshold = 350;
-        if (totalD < slackThreshold) {
-          targetSegmentLength = slackThreshold / (this.numNodes - 1);
+        if (!isTegang) {
+          let slackThreshold = 350;
+          if (totalD < slackThreshold) {
+            targetSegmentLength = slackThreshold / (this.numNodes - 1);
+          }
         }
 
-        let iterations = 2; 
+        let iterations = isTegang ? 6 : 2; 
         for (let iter = 0; iter < iterations; iter++) {
           for (let i = 0; i < this.numNodes - 1; i++) {
             let n1 = this.nodes[i];
