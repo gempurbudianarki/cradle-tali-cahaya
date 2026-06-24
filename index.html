@@ -1603,16 +1603,41 @@
         }
 
         let isTegang = config.tensionMode === 'tegang';
-        let gravityVal = isTegang ? 0.0 : 0.08;
 
+        // --- Tegang Mode: Strictly linear placement (100% rigid laser straight line) ---
+        if (isTegang) {
+          let perpAngle = atan2(p2.y - p1.y, p2.x - p1.x) + HALF_PI;
+          for (let i = 0; i < this.numNodes; i++) {
+            let t = i / (this.numNodes - 1);
+            let targetX = lerp(p1.x, p2.x, t);
+            let targetY = lerp(p1.y, p2.y, t);
+            let targetZ = lerp(p1.z || 0, p2.z || 0, t);
+            
+            if (this.vibrateForce > 0) {
+              let offsetIdx = sin(t * PI);
+              let waveVal = sin(frameCount * 0.95 + i) * this.vibrateForce * offsetIdx * 0.15;
+              targetX += cos(perpAngle) * waveVal;
+              targetY += sin(perpAngle) * waveVal;
+            }
+            
+            this.nodes[i].x = targetX;
+            this.nodes[i].y = targetY;
+            this.nodes[i].z = targetZ;
+            this.nodes[i].px = targetX;
+            this.nodes[i].py = targetY;
+            this.nodes[i].pz = targetZ;
+          }
+          return;
+        }
+
+        // --- Lentur Mode: Flexible Verlet Physics (Sagging & Gravity) ---
+        let gravityVal = 0.08;
         for (let i = 1; i < this.numNodes - 1; i++) {
           this.nodes[i].update(damping, gravityVal);
           
           if (this.vibrateForce > 0) {
             let offsetIdx = sin(i / (this.numNodes - 1) * PI);
-            let speedMult = isTegang ? 0.95 : 0.45;
-            let ampMult = isTegang ? 0.15 : 0.5;
-            let waveVal = sin(frameCount * speedMult + i) * this.vibrateForce * offsetIdx * ampMult;
+            let waveVal = sin(frameCount * 0.45 + i) * this.vibrateForce * offsetIdx * 0.5;
             this.nodes[i].y += waveVal;
           }
         }
@@ -1627,14 +1652,12 @@
         let totalD = dist(p1.x, p1.y, p2.x, p2.y);
         let targetSegmentLength = totalD / (this.numNodes - 1);
 
-        if (!isTegang) {
-          let slackThreshold = 350;
-          if (totalD < slackThreshold) {
-            targetSegmentLength = slackThreshold / (this.numNodes - 1);
-          }
+        let slackThreshold = 350;
+        if (totalD < slackThreshold) {
+          targetSegmentLength = slackThreshold / (this.numNodes - 1);
         }
 
-        let iterations = isTegang ? 6 : 2; 
+        let iterations = 2; 
         for (let iter = 0; iter < iterations; iter++) {
           for (let i = 0; i < this.numNodes - 1; i++) {
             let n1 = this.nodes[i];
