@@ -2047,17 +2047,17 @@
 
     // Particle System Implementation
     class Spark {
-      constructor(x, y) {
+      constructor(x, y, customColor = null, sizeMultiplier = 1.0) {
         this.x = x;
         this.y = y;
         let angle = random(TWO_PI);
-        let speed = random(3, 10);
+        let speed = customColor ? random(1.5, 4.5) : random(3, 10);
         this.vx = cos(angle) * speed;
         this.vy = sin(angle) * speed;
         this.alpha = 255;
-        this.size = random(3, 8);
-        this.color = random([themeColors.leftHand, themeColors.rightHand, themeColors.jointGlow]);
-        this.gravity = 0.15;
+        this.size = (customColor ? random(1.5, 4) : random(3, 8)) * sizeMultiplier;
+        this.color = customColor || random([themeColors.leftHand, themeColors.rightHand, themeColors.jointGlow]);
+        this.gravity = customColor ? 0.08 : 0.15;
       }
 
       update() {
@@ -2136,6 +2136,13 @@
         particles[i].update();
         particles[i].draw();
         if (particles[i].isDead()) {
+          let p = particles[i];
+          if (p instanceof BubbleSpark) {
+            let sparkCount = floor(random(5, 9));
+            for (let s = 0; s < sparkCount; s++) {
+              particles.push(new Spark(p.x, p.y, p.color, 1.0));
+            }
+          }
           particles.splice(i, 1);
         }
       }
