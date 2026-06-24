@@ -1888,14 +1888,12 @@
     }
 
     function updateAndDrawStrings(leftHand, rightHand) {
-      
       if (leftHand && rightHand) {
         for (let s of strings) {
           let p1 = leftHand[s.leftIdx];
           let p2 = rightHand[s.rightIdx];
           
           if (p1 && p2) {
-            
             let speedSum = fingerSpeeds.left[s.leftIdx] + fingerSpeeds.right[s.rightIdx];
             if (speedSum > 45) {
               s.pluck(speedSum * 0.4);
@@ -1908,27 +1906,6 @@
             checkFingerCollision(p1, p2, s.leftIdx, s.rightIdx);
           }
         }
-      } 
-      
-      else if (leftHand || rightHand) {
-        let activeHand = leftHand || rightHand;
-        
-        for (let i = 0; i < FINGERTIPS.length - 1; i++) {
-          let p1 = activeHand[FINGERTIPS[i]];
-          let p2 = activeHand[FINGERTIPS[i+1]];
-          
-          strokeWeight(2.5);
-          stroke(themeColors.leftHand[0], themeColors.leftHand[1], themeColors.leftHand[2], 140);
-          line(p1.x, p1.y, p2.x, p2.y);
-        }
-        
-        let thumb = activeHand[FINGERTIPS[0]];
-        let pinky = activeHand[FINGERTIPS[4]];
-        line(thumb.x, thumb.y, pinky.x, pinky.y);
-      }
-      
-      else {
-        drawMouseMesh();
       }
     }
 
@@ -1967,13 +1944,19 @@
 
               let intersect = lineIntersect(n1a.x, n1a.y, n1b.x, n1b.y, n2a.x, n2a.y, n2b.x, n2b.y);
               if (intersect) {
-                
                 drawIntersectionSpark(intersect.x, intersect.y, str1.colorIdx);
                 
                 let speed = (str1.vibrateForce + str2.vibrateForce) / 2;
-                if (speed > 5 && random() < 0.28) {
+                
+                // Spawn tiny clashing friction sparks immediately
+                if (random() < 0.45) {
+                  let c = random([themeColors.leftHand, themeColors.rightHand, themeColors.jointGlow]);
+                  particles.push(new Spark(intersect.x, intersect.y, c, 0.7));
+                }
+                
+                // Spawn bubble sparks that pop later
+                if (speed > 4 && random() < 0.35) {
                   particles.push(new BubbleSpark(intersect.x, intersect.y));
-                  
                   if (random() < 0.05) {
                     AudioEngine.playZap();
                   }
@@ -1994,11 +1977,18 @@
       let c = colors[colorIdx % 3];
       
       // Outer halo
-      fill(c[0], c[1], c[2], 180);
-      ellipse(x, y, 12, 12);
-      // Bright core
-      fill(255, 255, 255, 240);
-      ellipse(x, y, 5, 5);
+      fill(c[0], c[1], c[2], 120);
+      ellipse(x, y, 18, 18);
+      
+      // Inner hot core
+      fill(255, 255, 255, 255);
+      ellipse(x, y, 6, 6);
+      
+      // Lens flare lines
+      stroke(c[0], c[1], c[2], 200);
+      strokeWeight(1.2);
+      line(x - 12, y, x + 12, y);
+      line(x, y - 12, x, y + 12);
       pop();
     }
 
