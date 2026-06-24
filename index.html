@@ -528,9 +528,10 @@
         <div class="control-item">
           <label class="control-label" for="cradle-pattern">Cradle Connect Pattern</label>
           <select id="cradle-pattern">
-            <option value="parallel" selected>Parallel Fingers (Normal)</option>
+            <option value="parallel">Parallel Fingers (Normal)</option>
             <option value="cradle">Cat's Cradle (Crossed)</option>
             <option value="web">Full Laser Web (All fingertips)</option>
+            <option value="spider" selected>Spider Web (Full Joint Mesh)</option>
             <option value="constellation">Star Constellation (Joint Mesh)</option>
           </select>
         </div>
@@ -661,7 +662,7 @@
 
     const config = {
       feedMode: 'camera', 
-      cradlePattern: 'parallel', 
+      cradlePattern: 'spider', 
       themeName: 'cyberpunk',
       tensionMode: 'lentur',
       elasticity: 2.0,
@@ -1721,68 +1722,69 @@
 
         push();
 
-        // ===== TEGANG MODE: Pure laser beam — direct from p1 to p2 =====
+        // ===== TEGANG MODE: Thin precision laser beam — direct from p1 to p2 =====
         if (isTegang) {
           blendMode(ADD);
           noFill();
 
-          // Layer 1: wide outer soft glow
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 18);
-          strokeWeight(22);
+          // Use Z depth for 3D brightness/thickness scaling
+          let avgZ = ((p1.z || 0) + (p2.z || 0)) / 2;
+          let depthScale = map(avgZ, -0.15, 0.15, 1.3, 0.5, true);
+
+          // Layer 1: wide outer soft atmospheric glow (very subtle)
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 12 * depthScale);
+          strokeWeight(14 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 2: medium glow
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 55);
-          strokeWeight(9);
+          // Layer 2: inner glow ring
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 45 * depthScale);
+          strokeWeight(4 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 3: inner bright core
-          stroke(red(stringColor), green(stringColor), blue(stringColor), 200);
-          strokeWeight(3);
+          // Layer 3: bright core — thin laser line
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 220);
+          strokeWeight(1.5 * depthScale);
           line(p1.x, p1.y, p2.x, p2.y);
 
-          // Layer 4: white-hot center line
-          drawingContext.shadowBlur = 30;
-          drawingContext.shadowColor = `rgba(${red(stringColor)},${green(stringColor)},${blue(stringColor)},1)`;
+          // Layer 4: white-hot 1px center with shadow bloom
+          drawingContext.shadowBlur = 12;
+          drawingContext.shadowColor = `rgba(${red(stringColor)},${green(stringColor)},${blue(stringColor)},0.9)`;
           stroke(255, 255, 255, 255);
-          strokeWeight(1.2);
+          strokeWeight(0.8);
           line(p1.x, p1.y, p2.x, p2.y);
           drawingContext.shadowBlur = 0;
 
-          // Moving scan particle along the laser
-          let scanT = (frameCount * 0.018 + this.colorIdx * 0.4) % 1.0;
+          // === Moving micro dot particles (no balloons) ===
+          let scanT = (frameCount * 0.022 + this.colorIdx * 0.37) % 1.0;
           let sx = lerp(p1.x, p2.x, scanT);
           let sy = lerp(p1.y, p2.y, scanT);
-          noStroke();
-          fill(255, 255, 255, 255);
-          ellipse(sx, sy, 6, 6);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 180);
-          ellipse(sx, sy, 18, 18);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 60);
-          ellipse(sx, sy, 35, 35);
 
-          // Second scan particle offset
+          noStroke();
+          // Micro dot — tiny white core, 2px
+          fill(255, 255, 255, 240);
+          ellipse(sx, sy, 2.5 * depthScale, 2.5 * depthScale);
+          // Tiny glow halo — 5px max
+          fill(red(stringColor), green(stringColor), blue(stringColor), 140);
+          ellipse(sx, sy, 5 * depthScale, 5 * depthScale);
+
+          // Second micro particle offset by half
           let scanT2 = (scanT + 0.5) % 1.0;
           let sx2 = lerp(p1.x, p2.x, scanT2);
           let sy2 = lerp(p1.y, p2.y, scanT2);
+          fill(255, 255, 255, 180);
+          ellipse(sx2, sy2, 2 * depthScale, 2 * depthScale);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 100);
+          ellipse(sx2, sy2, 4 * depthScale, 4 * depthScale);
+
+          // Endpoint anchor dot — tiny (3px) bright dot, no large glow
           fill(255, 255, 255, 200);
-          ellipse(sx2, sy2, 4, 4);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 110);
-          ellipse(sx2, sy2, 12, 12);
+          ellipse(p1.x, p1.y, 3, 3);
+          fill(255, 255, 255, 200);
+          ellipse(p2.x, p2.y, 3, 3);
 
-          // Laser endpoint flare at both anchor points
-          fill(255, 255, 255, 220);
-          ellipse(p1.x, p1.y, 8, 8);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 130);
-          ellipse(p1.x, p1.y, 22, 22);
-          fill(255, 255, 255, 220);
-          ellipse(p2.x, p2.y, 8, 8);
-          fill(red(stringColor), green(stringColor), blue(stringColor), 130);
-          ellipse(p2.x, p2.y, 22, 22);
-
-          // Occasional spark emission
-          if (random() < 0.03) {
-            particles.push(new Spark(sx, sy));
+          // Very rare spark (tiny) — only 1% chance
+          if (random() < 0.01) {
+            particles.push(new Spark(sx, sy, null, 0.4));
           }
 
           pop();
@@ -1953,6 +1955,27 @@
           for (let rightF of FINGERTIPS) {
             strings.push(new PhysicalString(leftF, rightF, col % 3));
             col++;
+          }
+        }
+      } else if (config.cradlePattern === 'spider') {
+        // Spider Web: connect ALL 21 joints of left hand to ALL 21 joints of right hand
+        // For performance, use a curated dense set: all finger bones (not palm)
+        const ALL_JOINTS = [0,1,2,3,4, 5,6,7,8, 9,10,11,12, 13,14,15,16, 17,18,19,20];
+        let col = 0;
+        for (let lj of ALL_JOINTS) {
+          for (let rj of ALL_JOINTS) {
+            // Only connect matching-ish joints to avoid O(n^2) explosion while keeping density
+            // Connect: same finger index, adjacent fingers, and all fingertips to all joints
+            let lFinger = Math.floor(lj / 4);
+            let rFinger = Math.floor(rj / 4);
+            let isDirect = (lj === rj);                         // Same landmark
+            let isAdjacentFinger = Math.abs(lFinger - rFinger) <= 1; // Adjacent fingers
+            let isLTip = [4,8,12,16,20].includes(lj);           // Left is a fingertip
+            let isRTip = [4,8,12,16,20].includes(rj);           // Right is a fingertip
+            if (isDirect || isAdjacentFinger || isLTip || isRTip) {
+              strings.push(new PhysicalString(lj, rj, col % 3));
+              col++;
+            }
           }
         }
       } else if (config.cradlePattern === 'constellation') {
