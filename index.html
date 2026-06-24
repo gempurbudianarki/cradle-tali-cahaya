@@ -920,6 +920,10 @@
     let strings = [];
     let gridDeformationPoints = [];
 
+    // State untuk deteksi gestur kepalan dan kedekatan tangan
+    let fistState = { left: false, right: false };
+    let handProximityState = { wasClose: false };
+
     const FINGERTIPS = [4, 8, 12, 16, 20]; 
 
     let previousFingertipCoords = { left: new Array(21).fill(null), right: new Array(21).fill(null) };
@@ -1192,6 +1196,11 @@
 
       if (currentLeft) checkHandPinch(currentLeft, handPinchState.left, 'left');
       if (currentRight) checkHandPinch(currentRight, handPinchState.right, 'right');
+
+      // Deteksi kepalan tangan dan gerakan pisah/gabung
+      checkFistGesture(currentLeft, 'left');
+      checkFistGesture(currentRight, 'right');
+      checkHandProximity(currentLeft, currentRight);
 
       push();
       blendMode(ADD);
@@ -1863,7 +1872,7 @@
           }
         }
       } else if (config.cradlePattern === 'spider') {
-        // Spider Web: 35 tali — semua ujung jari ke ujung jari + sendi diagonal
+        // Spider Web: 45 tali — semua ujung jari + sendi knuckle diagonal
         let col = 0;
         // Layer 1: semua ujung jari kiri → semua ujung jari kanan (5x5 = 25 tali)
         for (let i = 0; i < FINGERTIPS.length; i++) {
@@ -1880,6 +1889,16 @@
         for (let i = 0; i < DIPS.length; i++) {
           let j = (i + 2) % DIPS.length;
           strings.push(new PhysicalString(DIPS[i], DIPS[j], col % 3)); col++;
+        }
+        // Layer 4: sendi MCP (buku jari) sejajar kiri-kanan (5 tali)
+        const MCPS = [1, 5, 9, 13, 17];
+        for (let i = 0; i < MCPS.length; i++) {
+          strings.push(new PhysicalString(MCPS[i], MCPS[i], col % 3)); col++;
+        }
+        // Layer 5: MCP silang diagonal (5 tali)
+        for (let i = 0; i < MCPS.length; i++) {
+          let j = (i + 1) % MCPS.length;
+          strings.push(new PhysicalString(MCPS[i], MCPS[j], col % 3)); col++;
         }
       } else if (config.cradlePattern === 'constellation') {
         
@@ -2142,10 +2161,137 @@
       }
     }
 
+    // === EFEK KEPALAN TERBUKA: Partikel melesat keluar ===
+    class FistBoom {
+      constructor(x, y, handColor) {
+        this.x = x; this.y = y;
+        let angle = random(TWO_PI);
+        let speed = random(5, 18);
+        this.vx = cos(angle) * speed;
+        this.vy = sin(angle) * speed;
+        this.alpha = 255;
+        this.size = random(3, 8);
+        this.color = handColor;
+        this.trail = [];
+      }
+      update() {
+        this.trail.push({ x: this.x, y: this.y, a: this.alpha });
+        if (this.trail.length > 6) this.trail.shift();
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.87;
+        this.vy *= 0.87;
+        this.vy -= 0.25;
+        this.alpha -= 11;
+        this.size *= 0.96;
+      }
+      draw() {
+        noStroke();
+        for (let i = 0; i < this.trail.length; i++) {
+          let t = this.trail[i];
+          let ta = t.a * (i / this.trail.length) * 0.35;
+          fill(this.color[0], this.color[1], this.color[2], ta);
+          ellipse(t.x, t.y, this.size * 0.7, this.size * 0.7);
+        }
+        fill(this.color[0], this.color[1], this.color[2], this.alpha);
+        ellipse(this.x, this.y, this.size, this.size);
+        fill(255, 255, 255, this.alpha * 0.75);
+        ellipse(this.x, this.y, this.size * 0.38, this.size * 0.38);
+      }
+      isDead() { return this.alpha <= 0 || this.size < 0.4; }
+    }
+
+    // === EFEK RING PULSE: Cincin ekspansi saat tangan berpisah ===
+    class RingPulse {
+      constructor(x, y, colorArr, maxR) {
+        this.x = x; this.y = y;
+        this.radius = 8;
+        this.maxRadius = maxR || random(90, 160);
+        this.alpha = 220;
+        this.color = colorArr;
+        this.sw = random(2.5, 5);
+        this.speed = random(0.12, 0.2);
+      }
+      update() {
+        this.radius += (this.maxRadius - this.radius) * this.speed;
+        this.alpha -= 7;
+        this.sw *= 0.95;
+      }
+      draw() {
+        push();
+        blendMode(ADD);
+        noFill();
+        stroke(this.color[0], this.color[1], this.color[2], this.alpha);
+        strokeWeight(this.sw);
+        ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
+        stroke(255, 255, 255, this.alpha * 0.45);
+        strokeWeight(this.sw * 0.5);
+        ellipse(this.x, this.y, this.radius * 1.5 * 2, this.radius * 1.5 * 2);
+        pop();
+      }
+      isDead() { return this.alpha <= 0; }
+    }
+
+    // === DETEKSI KEPALAN TANGAN ===
+    function checkFistGesture(hand, side) {
+      if (!hand) { fistState[side] = false; return; }
+      let palm = hand[0];
+      let totalDist = 0;
+      for (let idx of FINGERTIPS) totalDist += dist(hand[idx].x, hand[idx].y, palm.x, palm.y);
+      let avgDist = totalDist / FINGERTIPS.length;
+      let isFist = avgDist < 75;
+      let wasFist = fistState[side];
+      fistState[side] = isFist;
+
+      // Kepalan TERBUKA → BOOM!
+      if (wasFist && !isFist) {
+        let cx = 0, cy = 0;
+        for (let idx of FINGERTIPS) { cx += hand[idx].x; cy += hand[idx].y; }
+        cx /= FINGERTIPS.length; cy /= FINGERTIPS.length;
+        let col = side === 'left' ? themeColors.leftHand : themeColors.rightHand;
+        // Ring pulse besar
+        particles.push(new RingPulse(cx, cy, col, 130));
+        particles.push(new RingPulse(cx, cy, themeColors.jointGlow, 90));
+        // FistBoom partikel meledak keluar
+        for (let i = 0; i < 22; i++) particles.push(new FistBoom(cx, cy, col));
+        for (let i = 0; i < 8; i++) particles.push(new FistBoom(cx, cy, themeColors.jointGlow));
+        AudioEngine.playZap();
+      }
+    }
+
+    // === DETEKSI TANGAN DIGABUNG LALU DIPISAH ===
+    function checkHandProximity(leftHand, rightHand) {
+      if (!leftHand || !rightHand) { handProximityState.wasClose = false; return; }
+      let lx = (leftHand[0].x + leftHand[9].x) / 2;
+      let ly = (leftHand[0].y + leftHand[9].y) / 2;
+      let rx = (rightHand[0].x + rightHand[9].x) / 2;
+      let ry = (rightHand[0].y + rightHand[9].y) / 2;
+      let d = dist(lx, ly, rx, ry);
+      let isClose = d < 130;
+      let wasClose = handProximityState.wasClose;
+      handProximityState.wasClose = isClose;
+
+      // Tangan DIPISAH setelah digabung → BOOM beda!
+      if (wasClose && !isClose) {
+        let mx = (lx + rx) / 2, my = (ly + ry) / 2;
+        // Ring pulse dari titik tengah dan tiap tangan
+        particles.push(new RingPulse(mx, my, themeColors.leftHand, 200));
+        particles.push(new RingPulse(mx, my, themeColors.rightHand, 160));
+        particles.push(new RingPulse(mx, my, themeColors.jointGlow, 120));
+        particles.push(new RingPulse(lx, ly, themeColors.leftHand, 90));
+        particles.push(new RingPulse(rx, ry, themeColors.rightHand, 90));
+        // FistBoom partikel dari kedua sisi
+        for (let i = 0; i < 18; i++) particles.push(new FistBoom(lx, ly, themeColors.leftHand));
+        for (let i = 0; i < 18; i++) particles.push(new FistBoom(rx, ry, themeColors.rightHand));
+        for (let i = 0; i < 10; i++) particles.push(new FistBoom(mx, my, themeColors.jointGlow));
+        AudioEngine.playZap();
+      }
+    }
+
     function updateAndDrawParticles() {
-      // Hard cap: maks 60 partikel agar tidak numpuk
-      if (particles.length > 60) {
-        particles.splice(0, particles.length - 60);
+      // Hard cap: maks 120 partikel (lebih banyak untuk efek BOOM)
+      if (particles.length > 120) {
+        particles.splice(0, particles.length - 120);
       }
       for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
