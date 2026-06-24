@@ -1604,28 +1604,23 @@
 
         let isTegang = config.tensionMode === 'tegang';
 
-        // --- Tegang Mode: Strictly linear placement (100% rigid laser straight line) ---
+        // --- Tegang Mode: 100% rigid straight line, no physics ---
         if (isTegang) {
-          let perpAngle = atan2(p2.y - p1.y, p2.x - p1.x) + HALF_PI;
-          for (let i = 0; i < this.numNodes; i++) {
-            let t = i / (this.numNodes - 1);
-            let targetX = lerp(p1.x, p2.x, t);
-            let targetY = lerp(p1.y, p2.y, t);
-            let targetZ = lerp(p1.z || 0, p2.z || 0, t);
-            
-            if (this.vibrateForce > 0) {
-              let offsetIdx = sin(t * PI);
-              let waveVal = sin(frameCount * 0.95 + i) * this.vibrateForce * offsetIdx * 0.15;
-              targetX += cos(perpAngle) * waveVal;
-              targetY += sin(perpAngle) * waveVal;
-            }
-            
-            this.nodes[i].x = targetX;
-            this.nodes[i].y = targetY;
-            this.nodes[i].z = targetZ;
-            this.nodes[i].px = targetX;
-            this.nodes[i].py = targetY;
-            this.nodes[i].pz = targetZ;
+          // Just keep endpoints updated, draw method handles laser rendering directly
+          this.nodes[0].x = p1.x; this.nodes[0].y = p1.y; this.nodes[0].z = p1.z || 0;
+          this.nodes[0].px = p1.x; this.nodes[0].py = p1.y; this.nodes[0].pz = p1.z || 0;
+          let last = this.numNodes - 1;
+          this.nodes[last].x = p2.x; this.nodes[last].y = p2.y; this.nodes[last].z = p2.z || 0;
+          this.nodes[last].px = p2.x; this.nodes[last].py = p2.y; this.nodes[last].pz = p2.z || 0;
+          // Snap all middle nodes to perfectly straight lerp line
+          for (let i = 1; i < last; i++) {
+            let t = i / last;
+            this.nodes[i].x = lerp(p1.x, p2.x, t);
+            this.nodes[i].y = lerp(p1.y, p2.y, t);
+            this.nodes[i].z = lerp(p1.z || 0, p2.z || 0, t);
+            this.nodes[i].px = this.nodes[i].x;
+            this.nodes[i].py = this.nodes[i].y;
+            this.nodes[i].pz = this.nodes[i].z;
           }
           return;
         }
@@ -1721,12 +1716,81 @@
 
       draw(p1, p2) {
         let d = dist(p1.x, p1.y, p2.x, p2.y);
-        
-        // Render parameters: gets thin and bright when stretched
-        let thickness = map(d, 100, 1000, 5.5, 1.6, true);
+        let isTegang = config.tensionMode === 'tegang';
         let stringColor = getGradientColor(this.colorIdx, d);
 
         push();
+
+        // ===== TEGANG MODE: Pure laser beam — direct from p1 to p2 =====
+        if (isTegang) {
+          blendMode(ADD);
+          noFill();
+
+          // Layer 1: wide outer soft glow
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 18);
+          strokeWeight(22);
+          line(p1.x, p1.y, p2.x, p2.y);
+
+          // Layer 2: medium glow
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 55);
+          strokeWeight(9);
+          line(p1.x, p1.y, p2.x, p2.y);
+
+          // Layer 3: inner bright core
+          stroke(red(stringColor), green(stringColor), blue(stringColor), 200);
+          strokeWeight(3);
+          line(p1.x, p1.y, p2.x, p2.y);
+
+          // Layer 4: white-hot center line
+          drawingContext.shadowBlur = 30;
+          drawingContext.shadowColor = `rgba(${red(stringColor)},${green(stringColor)},${blue(stringColor)},1)`;
+          stroke(255, 255, 255, 255);
+          strokeWeight(1.2);
+          line(p1.x, p1.y, p2.x, p2.y);
+          drawingContext.shadowBlur = 0;
+
+          // Moving scan particle along the laser
+          let scanT = (frameCount * 0.018 + this.colorIdx * 0.4) % 1.0;
+          let sx = lerp(p1.x, p2.x, scanT);
+          let sy = lerp(p1.y, p2.y, scanT);
+          noStroke();
+          fill(255, 255, 255, 255);
+          ellipse(sx, sy, 6, 6);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 180);
+          ellipse(sx, sy, 18, 18);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 60);
+          ellipse(sx, sy, 35, 35);
+
+          // Second scan particle offset
+          let scanT2 = (scanT + 0.5) % 1.0;
+          let sx2 = lerp(p1.x, p2.x, scanT2);
+          let sy2 = lerp(p1.y, p2.y, scanT2);
+          fill(255, 255, 255, 200);
+          ellipse(sx2, sy2, 4, 4);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 110);
+          ellipse(sx2, sy2, 12, 12);
+
+          // Laser endpoint flare at both anchor points
+          fill(255, 255, 255, 220);
+          ellipse(p1.x, p1.y, 8, 8);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 130);
+          ellipse(p1.x, p1.y, 22, 22);
+          fill(255, 255, 255, 220);
+          ellipse(p2.x, p2.y, 8, 8);
+          fill(red(stringColor), green(stringColor), blue(stringColor), 130);
+          ellipse(p2.x, p2.y, 22, 22);
+
+          // Occasional spark emission
+          if (random() < 0.03) {
+            particles.push(new Spark(sx, sy));
+          }
+
+          pop();
+          return;
+        }
+
+        // ===== LENTUR MODE: Flexible node-based drawing =====
+        let thickness = map(d, 100, 1000, 5.5, 1.6, true);
         
         // Apply selected glow mode
         if (config.glowMode === 'blur') {
